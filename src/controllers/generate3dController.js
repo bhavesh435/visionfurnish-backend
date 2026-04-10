@@ -1,66 +1,62 @@
-// ============================================================
-// VisionFurnish — Smart Category-Based 3D Model Assignment
-// Uses free KhronosGroup GLB models via jsDelivr CDN
-// Completely FREE — No API keys, no credits, works forever!
-// ============================================================
+// ── Self-hosted AR furniture GLB models ──────────────────────
+// Hosted on our own Render server for Android Scene Viewer compatibility.
+// jsDelivr CDN returns 403 to Scene Viewer; self-hosting fixes this.
+const BASE = 'https://visionfurnish-api.onrender.com/models';
 
-const pool = require('../config/db');
-
-// ── Free furniture GLB models via jsDelivr CDN ───────────────
 const FURNITURE_MODELS = [
   {
     keywords: ['sofa', 'couch', 'sectional', 'loveseat', 'settee', 'divan', 'futon', 'recliner'],
     label: 'Modern Sofa',
-    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/SheenChair/glTF-Binary/SheenChair.glb',
+    url: `${BASE}/chair.glb`,
   },
   {
     keywords: ['chair', 'armchair', 'accent', 'stool', 'seat', 'wingback', 'rocking', 'bar stool'],
     label: 'Accent Chair',
-    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/AntiqueChair/glTF-Binary/AntiqueChair.glb',
+    url: `${BASE}/chair.glb`,
   },
   {
     keywords: ['table', 'coffee', 'dining', 'side', 'console', 'nested', 'marble'],
     label: 'Coffee Table',
-    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/SheenChair/glTF-Binary/SheenChair.glb',
+    url: `${BASE}/sofa.glb`,
   },
   {
     keywords: ['bed', 'mattress', 'bunk', 'daybed', 'headboard', 'platform', 'canopy', 'hydraulic'],
     label: 'King Size Bed',
-    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/SheenChair/glTF-Binary/SheenChair.glb',
+    url: `${BASE}/chair.glb`,
   },
   {
     keywords: ['shelf', 'shelves', 'bookcase', 'bookshelf', 'rack', 'display', 'ladder'],
     label: 'Bookshelf',
-    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/AntiqueChair/glTF-Binary/AntiqueChair.glb',
+    url: `${BASE}/sofa.glb`,
   },
   {
     keywords: ['wardrobe', 'closet', 'dresser', 'armoire', 'drawer', 'cabinet', 'cupboard', 'almirah'],
     label: 'Wardrobe',
-    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/AntiqueChair/glTF-Binary/AntiqueChair.glb',
+    url: `${BASE}/sofa.glb`,
   },
   {
     keywords: ['desk', 'workstation', 'bureau', 'writing', 'study', 'standing', 'laptop', 'computer'],
     label: 'Study Desk',
-    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/SheenChair/glTF-Binary/SheenChair.glb',
+    url: `${BASE}/sofa.glb`,
   },
   {
     keywords: ['tv', 'television', 'entertainment', 'console', 'unit', 'media', 'rustic'],
     label: 'TV Unit',
-    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/SheenChair/glTF-Binary/SheenChair.glb',
+    url: `${BASE}/sofa.glb`,
   },
   {
     keywords: ['lamp', 'light', 'chandelier', 'pendant', 'sconce', 'strip', 'led', 'crystal'],
     label: 'Floor Lamp',
-    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/AntiqueChair/glTF-Binary/AntiqueChair.glb',
+    url: `${BASE}/sofa.glb`,
   },
   {
     keywords: ['outdoor', 'garden', 'patio', 'bench', 'lounger', 'swing', 'hammock'],
     label: 'Garden Chair',
-    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/AntiqueChair/glTF-Binary/AntiqueChair.glb',
+    url: `${BASE}/chair.glb`,
   },
 ];
 
-const FALLBACK_URL = 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/SheenChair/glTF-Binary/SheenChair.glb';
+const FALLBACK_URL = `${BASE}/chair.glb`;
 
 // ── Pick best model for a product ────────────────────────────
 function pickModel(productName, categoryName = '') {

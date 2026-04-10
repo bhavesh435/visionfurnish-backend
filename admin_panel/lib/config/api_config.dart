@@ -1,6 +1,6 @@
 class ApiConfig {
-  // Change this to your backend URL
-  static const String baseUrl = 'http://56.228.1.105:5000/api';
+  // Connect to the live Render cloud backend
+  static const String baseUrl = 'https://visionfurnish-api.onrender.com/api';
 
   // Auth
   static const String login          = '$baseUrl/auth/login';

@@ -1,7 +1,6 @@
 class ApiConfig {
-  // Use your PC's local network IP so physical devices can reach the server
-  // PC IP: 192.168.43.233  (update if your WiFi changes)
-  static const String baseUrl = 'http://192.168.43.233:5000/api';
+  // Connect to the live Render cloud backend
+  static const String baseUrl = 'https://visionfurnish-api.onrender.com/api';
 
 
   // Auth

@@ -37,6 +37,15 @@ app.use(express.urlencoded({ extended: true }));
 // ── Serve uploaded 3D models as static files ───────────────
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// ── Serve bundled AR furniture GLB models ──────────────────
+// These are self-hosted for Android Scene Viewer compatibility
+// (CDN URLs fail due to redirects — direct hosting fixes this)
+app.use('/models', (req, res, next) => {
+  res.setHeader('Content-Type', 'model/gltf-binary');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+}, express.static(path.join(__dirname, 'models')));
+
 // ── Health check ────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
   res.json({

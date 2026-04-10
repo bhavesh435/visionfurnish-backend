@@ -24,66 +24,60 @@ class FurnitureMatch {
 class FurnitureMatcher {
   FurnitureMatcher._();
 
-  // ── Local Catalogue ────────────────────────────────────────────────────────
-  // Real furniture .glb models via jsDelivr CDN (fast, no auth required)
+  // ── Self-hosted on Render — works with Android Scene Viewer ────────────────
+  static const String _base = 'https://visionfurnish-api.onrender.com/models';
+
   static const List<FurnitureMatch> _catalogue = [
     FurnitureMatch(
       category: 'chair',
-      label: 'Antique Chair',
+      label: 'Accent Chair',
       emoji: '🪑',
-      glbUrl:
-          'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/AntiqueChair/glTF-Binary/AntiqueChair.glb',
+      glbUrl: '$_base/chair.glb',
     ),
     FurnitureMatch(
       category: 'sofa',
-      label: 'Sheen Chair / Sofa',
+      label: 'Modern Sofa',
       emoji: '🛋️',
-      glbUrl:
-          'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/SheenChair/glTF-Binary/SheenChair.glb',
+      glbUrl: '$_base/chair.glb',
     ),
     FurnitureMatch(
       category: 'table',
       label: 'Coffee Table',
       emoji: '🪵',
-      glbUrl:
-          'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/AntiqueChair/glTF-Binary/AntiqueChair.glb',
+      glbUrl: '$_base/sofa.glb',
     ),
     FurnitureMatch(
       category: 'bed',
       label: 'King Bed',
       emoji: '🛏️',
-      glbUrl:
-          'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/SheenChair/glTF-Binary/SheenChair.glb',
+      glbUrl: '$_base/chair.glb',
     ),
     FurnitureMatch(
       category: 'lamp',
       label: 'Floor Lamp',
       emoji: '💡',
-      glbUrl:
-          'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/AntiqueChair/glTF-Binary/AntiqueChair.glb',
+      glbUrl: '$_base/sofa.glb',
     ),
     FurnitureMatch(
       category: 'shelf',
       label: 'Bookshelf',
       emoji: '📚',
-      glbUrl:
-          'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/SheenChair/glTF-Binary/SheenChair.glb',
+      glbUrl: '$_base/sofa.glb',
     ),
     FurnitureMatch(
       category: 'wardrobe',
       label: 'Wardrobe / Dresser',
       emoji: '🚪',
-      glbUrl:
-          'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/AntiqueChair/glTF-Binary/AntiqueChair.glb',
+      glbUrl: '$_base/sofa.glb',
     ),
     FurnitureMatch(
       category: 'desk',
       label: 'Study Desk',
       emoji: '🖥️',
-      glbUrl:
-          'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/SheenChair/glTF-Binary/SheenChair.glb',
+      glbUrl: '$_base/sofa.glb',
     ),
   ];
+
 
   // ── Keyword map ────────────────────────────────────────────────────────────
   static const Map<String, List<String>> _keywords = {
