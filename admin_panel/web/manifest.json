@@ -1,0 +1,9 @@
+{
+  "name": "VisionFurnish Admin",
+  "short_name": "VF Admin",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0F0F1A",
+  "theme_color": "#D4A843",
+  "description": "VisionFurnish Premium Admin Dashboard"
+}

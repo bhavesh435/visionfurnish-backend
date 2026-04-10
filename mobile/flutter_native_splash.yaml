@@ -1,0 +1,18 @@
+flutter_native_splash:
+  # Background color — pure black
+  color: "#000000"
+
+  # The logo image centered on the native launch screen
+  image: assets/images/logo.png
+
+  # iOS supports dark mode by default; use same settings
+  color_dark: "#000000"
+  image_dark: assets/images/logo.png
+
+  android_12:
+    # Android 12+ uses a separate icon-based splash
+    image: assets/images/logo.png
+    color: "#000000"
+    icon_background_color: "#000000"
+
+  web: false

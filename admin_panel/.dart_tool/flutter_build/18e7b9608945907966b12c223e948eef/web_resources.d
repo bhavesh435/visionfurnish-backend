@@ -1,0 +1,1 @@
+ C:\\Users\\shahd\\OneDrive\\Desktop\\vf\\admin_panel\\build\\web\\manifest.json:  C:\\Users\\shahd\\OneDrive\\Desktop\\vf\\admin_panel\\web\\index.html C:\\Users\\shahd\\OneDrive\\Desktop\\vf\\admin_panel\\web\\manifest.json
