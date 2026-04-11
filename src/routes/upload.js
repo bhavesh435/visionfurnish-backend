@@ -47,10 +47,17 @@ router.post('/model', upload.single('model'), (req, res) => {
     return res.status(400).json({ success: false, message: 'No file uploaded.' });
   }
 
-  // Build public URL from Host header (works for both LAN and ADB forwarding)
-  const host = req.get('host'); // e.g. "192.168.1.5:5000" or "localhost:5000"
-  const protocol = req.protocol; // "http" or "https"
-  const publicUrl = `${protocol}://${host}/uploads/models/${req.file.filename}`;
+  // Build public URL — prefer RENDER_EXTERNAL_URL on deployed Render instances,
+  // otherwise fall back to the request's protocol + host header.
+  const renderUrl = process.env.RENDER_EXTERNAL_URL; // e.g. "https://visionfurnish-api.onrender.com"
+  let publicUrl;
+  if (renderUrl) {
+    publicUrl = `${renderUrl}/uploads/models/${req.file.filename}`;
+  } else {
+    const host = req.get('host');
+    const protocol = req.protocol;
+    publicUrl = `${protocol}://${host}/uploads/models/${req.file.filename}`;
+  }
 
   return res.status(201).json({
     success: true,

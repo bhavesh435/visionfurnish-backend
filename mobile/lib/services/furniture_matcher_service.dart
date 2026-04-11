@@ -18,77 +18,119 @@ class FurnitureMatch {
 /// Maps an uploaded image to the closest pre-stored 3D furniture model
 /// by inspecting the filename for known furniture keywords.
 ///
-/// All GLB models are from KhronosGroup/glTF-Sample-Models and
-/// Google model-viewer shared assets — MIT / Apache 2.0 licensed.
-/// Delivered via jsDelivr CDN for reliability worldwide.
+/// GLB models are self-hosted on Render:
+///   • chair.glb  — Accent chair (2.8 MB)
+///   • sofa.glb   — 3-seater sofa (120 KB)
+///   • table.glb  — Dining/coffee table (8.1 MB)
 class FurnitureMatcher {
   FurnitureMatcher._();
 
-  // ── Self-hosted on Render — works with Android Scene Viewer ────────────────
+  /// Base URL of the self-hosted GLB server on Render.
   static const String _base = 'https://visionfurnish-api.onrender.com/models';
 
+  // ── GLB URLs ───────────────────────────────────────────────────────────────
+  static const String _chairGlb    = '$_base/chair.glb';
+  static const String _sofaGlb     = '$_base/sofa.glb';
+  static const String _tableGlb    = '$_base/table.glb';
+  static const String _lampGlb     = '$_base/lamp.glb';
+
+  // ── Catalogue ──────────────────────────────────────────────────────────────
+  // Each category maps to the most visually-appropriate available GLB model.
   static const List<FurnitureMatch> _catalogue = [
+    // ── Chairs → chair.glb ─────────────────────────────────────────────────
     FurnitureMatch(
       category: 'chair',
-      label: 'Accent Chair',
-      emoji: '🪑',
-      glbUrl: '$_base/chair.glb',
+      label:    'Office / Accent Chair',
+      emoji:    '🪑',
+      glbUrl:   _chairGlb,
     ),
+
+    // ── Sofas → sofa.glb ───────────────────────────────────────────────────
     FurnitureMatch(
       category: 'sofa',
-      label: 'Modern Sofa',
-      emoji: '🛋️',
-      glbUrl: '$_base/chair.glb',
+      label:    'Modern Sofa',
+      emoji:    '🛋️',
+      glbUrl:   _sofaGlb,
     ),
+
+    // ── Tables → table.glb ─────────────────────────────────────────────────
     FurnitureMatch(
       category: 'table',
-      label: 'Coffee Table',
-      emoji: '🪵',
-      glbUrl: '$_base/sofa.glb',
+      label:    'Dining / Coffee Table',
+      emoji:    '🪵',
+      glbUrl:   _tableGlb,
     ),
-    FurnitureMatch(
-      category: 'bed',
-      label: 'King Bed',
-      emoji: '🛏️',
-      glbUrl: '$_base/chair.glb',
-    ),
-    FurnitureMatch(
-      category: 'lamp',
-      label: 'Floor Lamp',
-      emoji: '💡',
-      glbUrl: '$_base/sofa.glb',
-    ),
-    FurnitureMatch(
-      category: 'shelf',
-      label: 'Bookshelf',
-      emoji: '📚',
-      glbUrl: '$_base/sofa.glb',
-    ),
-    FurnitureMatch(
-      category: 'wardrobe',
-      label: 'Wardrobe / Dresser',
-      emoji: '🚪',
-      glbUrl: '$_base/sofa.glb',
-    ),
+
+    // ── Desks → table.glb (closest shape) ──────────────────────────────────
     FurnitureMatch(
       category: 'desk',
-      label: 'Study Desk',
-      emoji: '🖥️',
-      glbUrl: '$_base/sofa.glb',
+      label:    'Study / Standing Desk',
+      emoji:    '🖥️',
+      glbUrl:   _tableGlb,
+    ),
+
+    // ── Beds → chair.glb (placeholder until bed.glb is added) ──────────────
+    FurnitureMatch(
+      category: 'bed',
+      label:    'King / Queen Bed',
+      emoji:    '🛏️',
+      glbUrl:   _chairGlb,
+    ),
+
+    // ── Wardrobes → sofa.glb (box-like shape, closest approximation) ───────
+    FurnitureMatch(
+      category: 'wardrobe',
+      label:    'Wardrobe / Closet',
+      emoji:    '🚪',
+      glbUrl:   _sofaGlb,
+    ),
+
+    // ── Bookshelves → table.glb ────────────────────────────────────────────
+    FurnitureMatch(
+      category: 'shelf',
+      label:    'Bookshelf',
+      emoji:    '📚',
+      glbUrl:   _tableGlb,
+    ),
+
+    // ── Lamps / Lighting → lamp.glb (real barn lamp) ────────────────────────
+    FurnitureMatch(
+      category: 'lamp',
+      label:    'Barn Lamp',
+      emoji:    '💡',
+      glbUrl:   _lampGlb,
+    ),
+
+    // ── Outdoor → sofa.glb ─────────────────────────────────────────────────
+    FurnitureMatch(
+      category: 'outdoor',
+      label:    'Garden / Patio Furniture',
+      emoji:    '🌿',
+      glbUrl:   _sofaGlb,
+    ),
+
+    // ── TV Units → table.glb ───────────────────────────────────────────────
+    FurnitureMatch(
+      category: 'tv',
+      label:    'TV Unit / Console',
+      emoji:    '📺',
+      glbUrl:   _tableGlb,
     ),
   ];
 
-
-  // ── Keyword map ────────────────────────────────────────────────────────────
+  // ── Keyword map ───────────────────────────────────────────────────────────
+  // Maps filename keywords → category strings above.
   static const Map<String, List<String>> _keywords = {
-    'chair':    ['chair', 'seat', 'armchair', 'recliner', 'stool', 'rocker', 'throne', 'accent'],
-    'sofa':     ['sofa', 'couch', 'settee', 'loveseat', 'sectional', 'divan', 'futon'],
-    'table':    ['table', 'coffee', 'dining', 'counter', 'bench', 'ottoman', 'console', 'side'],
-    'bed':      ['bed', 'mattress', 'cot', 'bunk', 'daybed', 'headboard'],
-    'lamp':     ['lamp', 'light', 'bulb', 'chandelier', 'sconce', 'lantern', 'floor lamp'],
-    'shelf':    ['shelf', 'shelve', 'rack', 'bookcase', 'bookshelf', 'cabinet', 'book', 'storage'],
-    'wardrobe': ['wardrobe', 'closet', 'dresser', 'armoire', 'drawer', 'cupboard'],
-    'desk':     ['desk', 'office', 'workstation', 'bureau', 'writing', 'study'],
+    'chair':    ['chair', 'seat', 'armchair', 'recliner', 'stool', 'rocker', 'throne', 'accent', 'ergonomic'],
+    'sofa':     ['sofa', 'couch', 'settee', 'loveseat', 'sectional', 'divan', 'futon', 'chesterfield'],
+    'table':    ['table', 'coffee', 'dining', 'counter', 'bench', 'ottoman', 'console', 'side', 'marble'],
+    'desk':     ['desk', 'office', 'workstation', 'bureau', 'writing', 'study', 'standing'],
+    'bed':      ['bed', 'mattress', 'cot', 'bunk', 'daybed', 'headboard', 'king', 'queen'],
+    'wardrobe': ['wardrobe', 'closet', 'dresser', 'armoire', 'drawer', 'cupboard', 'almirah'],
+    'shelf':    ['shelf', 'shelve', 'rack', 'bookcase', 'bookshelf', 'cabinet', 'book', 'storage', 'industrial'],
+    'lamp':     ['lamp', 'light', 'bulb', 'chandelier', 'sconce', 'lantern', 'crystal', 'pendant'],
+    'outdoor':  ['outdoor', 'garden', 'patio', 'balcony', 'rattan', 'bench', 'swing', 'lounger'],
+    'tv':       ['tv', 'television', 'entertainment', 'media', 'console', 'stand'],
   };
 
   /// Match an image [File] to the best furniture category using filename analysis.
@@ -105,7 +147,7 @@ class FurnitureMatcher {
     return _getMatch(fallback);
   }
 
-  /// Match from a user-selected category label.
+  /// Match directly from a user-selected category label.
   static FurnitureMatch matchFromCategory(String category) {
     return _getMatch(category.toLowerCase());
   }
@@ -113,12 +155,13 @@ class FurnitureMatcher {
   static FurnitureMatch _getMatch(String category) {
     return _catalogue.firstWhere(
       (c) => c.category == category,
-      orElse: () => _catalogue.first,
+      orElse: () => _catalogue.first, // default: chair
     );
   }
 
-  /// All available categories (for manual selection UI).
+  /// All available categories for UI display.
   static List<String> get categories => _catalogue.map((e) => e.category).toList();
 
+  /// Full catalogue (for UI chips / grid).
   static List<FurnitureMatch> get catalogue => _catalogue;
 }

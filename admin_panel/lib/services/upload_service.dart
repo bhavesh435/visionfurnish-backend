@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../config/api_config.dart';
@@ -10,19 +10,20 @@ class UploadService {
 
   // ── Upload .glb file ─────────────────────────────────────────
 
-  /// Uploads a [file] to `POST /api/upload/model`.
+  /// Uploads [bytes] (file contents) to `POST /api/upload/model`.
+  /// Works on Flutter Web (no dart:io needed).
   /// Returns the public URL string on success, or throws on failure.
   static Future<String> uploadGlbModel(
-    File file, {
+    Uint8List bytes,
+    String filename, {
     void Function(double progress)? onProgress,
   }) async {
-    final uri      = Uri.parse(ApiConfig.uploadModel);
-    final filename = file.path.split('/').last.split('\\').last;
+    final uri = Uri.parse(ApiConfig.uploadModel);
 
     final request = http.MultipartRequest('POST', uri)
-      ..files.add(await http.MultipartFile.fromPath(
+      ..files.add(http.MultipartFile.fromBytes(
         'model',
-        file.path,
+        bytes,
         filename: filename,
       ));
 
@@ -43,7 +44,8 @@ class UploadService {
         } catch (_) {}
         throw Exception(msg);
       }
-    } on SocketException {
+    } catch (e) {
+      if (e is Exception) rethrow;
       throw Exception('Network error — cannot reach the server.');
     }
   }
@@ -69,7 +71,8 @@ class UploadService {
         return data; // includes taskId, status, glbUrl (if immediate)
       }
       throw Exception(data['message'] ?? 'Failed to start 3D generation');
-    } on SocketException {
+    } catch (e) {
+      if (e is Exception) rethrow;
       throw Exception('Network error — cannot reach the server.');
     }
   }
@@ -95,7 +98,8 @@ class UploadService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       if (response.statusCode == 200) return data;
       throw Exception(data['message'] ?? 'Polling failed (${response.statusCode})');
-    } on SocketException {
+    } catch (e) {
+      if (e is Exception) rethrow;
       throw Exception('Network error — cannot reach the server.');
     }
   }

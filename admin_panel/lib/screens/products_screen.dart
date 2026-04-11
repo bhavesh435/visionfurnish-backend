@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -471,21 +470,29 @@ class _ProductFormDialogState extends State<_ProductFormDialog> with SingleTicke
       _arUploadError = null;
     });
 
-    // Open OS file picker filtered to .glb/.gltf
+    // Open file picker filtered to .glb/.gltf
+    // withData: true ensures bytes are available on Flutter Web
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['glb', 'gltf'],
       dialogTitle: 'Select 3D Model (.glb)',
+      withData: true,
     );
 
     if (result == null || result.files.isEmpty) return;
     final picked = result.files.first;
-    if (picked.path == null) return;
+
+    // On Flutter Web, path is null — use bytes instead
+    final bytes = picked.bytes;
+    if (bytes == null || bytes.isEmpty) {
+      setState(() => _arUploadError = 'Could not read file. Please try again.');
+      return;
+    }
 
     setState(() => _arUploading = true);
 
     try {
-      final url = await UploadService.uploadGlbModel(File(picked.path!));
+      final url = await UploadService.uploadGlbModel(bytes, picked.name);
       if (mounted) {
         setState(() {
           _arModelCtrl.text = url;

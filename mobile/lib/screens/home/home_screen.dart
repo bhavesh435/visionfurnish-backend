@@ -17,14 +17,31 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final ScrollController _scrollCtrl = ScrollController();
+
   @override
   void initState() {
     super.initState();
+    _scrollCtrl.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProductProvider>().fetchCategories();
       context.read<ProductProvider>().fetchFeatured();
       context.read<ProductProvider>().fetchProducts(reset: true);
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollCtrl.removeListener(_onScroll);
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollCtrl.position.pixels >=
+        _scrollCtrl.position.maxScrollExtent - 300) {
+      context.read<ProductProvider>().loadMore();
+    }
   }
 
   @override
@@ -34,10 +51,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppTheme.bgPrimary,
       body: CustomScrollView(
+        controller: _scrollCtrl,
         slivers: [
           // ── App Bar ──
           SliverAppBar(
-            floating: true,
+            pinned: false,
+            floating: false,
+            snap: false,
             backgroundColor: AppTheme.bgPrimary,
             expandedHeight: 110,
             flexibleSpace: FlexibleSpaceBar(
@@ -93,13 +113,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // ── AR Scan Banner ──
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: _ArScanBanner(),
-            ),
-          ),
 
           // ── Featured ──
           if (products.featured.isNotEmpty) ...[
@@ -154,14 +167,33 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisCount: 2, mainAxisSpacing: 14, crossAxisSpacing: 14, childAspectRatio: 0.65,
                     children: List.generate(6, (_) => const SkeletonCard()),
                   )
-                : SliverGrid.count(
-                    crossAxisCount: 2, mainAxisSpacing: 14, crossAxisSpacing: 14, childAspectRatio: 0.65,
-                    children: products.products.map((p) => ProductCard(
-                      product: p, onTap: () => _openDetail(p),
-                      isFav: wishlist.isWishlisted(p.id),
-                      onFav: () => wishlist.toggle(p.id),
-                    )).toList(),
+                : SliverGrid(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2, mainAxisSpacing: 14, crossAxisSpacing: 14, childAspectRatio: 0.65,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) {
+                        final p = products.products[i];
+                        return ProductCard(
+                          key: ValueKey(p.id),
+                          product: p, onTap: () => _openDetail(p),
+                          isFav: wishlist.isWishlisted(p.id),
+                          onFav: () => wishlist.toggle(p.id),
+                        );
+                      },
+                      childCount: products.products.length,
+                    ),
                   ),
+          ),
+
+          // ── Load More / End Indicator ──
+          SliverToBoxAdapter(
+            child: products.isLoading && products.products.isNotEmpty
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(child: CircularProgressIndicator(color: AppTheme.accent, strokeWidth: 2)),
+                  )
+                : const SizedBox.shrink(),
           ),
 
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -206,162 +238,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// ── AR Scan Banner ──
-class _ArScanBanner extends StatefulWidget {
-  @override
-  State<_ArScanBanner> createState() => _ArScanBannerState();
-}
-
-class _ArScanBannerState extends State<_ArScanBanner>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _shimmerCtrl;
-  late Animation<double> _shimmerAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _shimmerCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..repeat();
-    _shimmerAnim = Tween<double>(begin: -1.5, end: 1.5).animate(
-      CurvedAnimation(parent: _shimmerCtrl, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _shimmerCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, '/scan-ar'),
-      child: AnimatedBuilder(
-        animation: _shimmerAnim,
-        builder: (_, __) => Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: const [
-                Color(0xFF1A1208),
-                Color(0xFF2A1E0A),
-                Color(0xFF1A1208),
-              ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: AppTheme.accent.withValues(alpha: 0.35),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.accent.withValues(alpha: 0.12),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              // Icon box
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppTheme.accent.withValues(alpha: 0.3),
-                      AppTheme.accentDark.withValues(alpha: 0.2),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppTheme.accent.withValues(alpha: 0.5),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.view_in_ar_rounded,
-                  color: AppTheme.accent,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
-              // Text
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Flexible(
-                        child: Text(
-                          'Scan Furniture → AR',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.outfit(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppTheme.accent.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          'NEW',
-                          style: GoogleFonts.inter(
-                            color: AppTheme.accent,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ]),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Upload any furniture photo — see it in your room instantly',
-                      style: GoogleFonts.inter(
-                        color: AppTheme.textSecondary,
-                        fontSize: 12,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Arrow
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.accent.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: AppTheme.accent,
-                  size: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // ── Search Delegate ──
 class _ProductSearchDelegate extends SearchDelegate<String> {

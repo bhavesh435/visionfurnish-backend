@@ -1,53 +1,60 @@
 // ── Self-hosted AR furniture GLB models ──────────────────────
 // Hosted on our own Render server for Android Scene Viewer compatibility.
-// jsDelivr CDN returns 403 to Scene Viewer; self-hosting fixes this.
+// These are REAL furniture models from KhronosGroup/glTF-Sample-Assets.
+//   • chair.glb  = SheenChair (fabric director's chair, Wayfair CC0)
+//   • sofa.glb   = GlamVelvetSofa (velvet sofa, Wayfair CC BY 4.0)
+//   • table.glb  = SheenWoodLeatherSofa (wood/leather sofa, CC0)
+//   • lamp.glb   = AnisotropyBarnLamp (barn lamp, Wayfair CC BY 4.0)
+
+const db = require('../config/db');
+
 const BASE = 'https://visionfurnish-api.onrender.com/models';
 
 const FURNITURE_MODELS = [
   {
-    keywords: ['sofa', 'couch', 'sectional', 'loveseat', 'settee', 'divan', 'futon', 'recliner'],
-    label: 'Modern Sofa',
-    url: `${BASE}/chair.glb`,
-  },
-  {
-    keywords: ['chair', 'armchair', 'accent', 'stool', 'seat', 'wingback', 'rocking', 'bar stool'],
-    label: 'Accent Chair',
-    url: `${BASE}/chair.glb`,
-  },
-  {
-    keywords: ['table', 'coffee', 'dining', 'side', 'console', 'nested', 'marble'],
-    label: 'Coffee Table',
+    keywords: ['sofa', 'couch', 'sectional', 'loveseat', 'settee', 'divan', 'futon', 'chesterfield'],
+    label: 'Velvet Sofa',
     url: `${BASE}/sofa.glb`,
   },
   {
-    keywords: ['bed', 'mattress', 'bunk', 'daybed', 'headboard', 'platform', 'canopy', 'hydraulic'],
-    label: 'King Size Bed',
+    keywords: ['chair', 'armchair', 'accent', 'stool', 'seat', 'wingback', 'rocking', 'bar stool', 'ergonomic', 'mesh', 'office'],
+    label: 'Fabric Chair',
     url: `${BASE}/chair.glb`,
   },
   {
-    keywords: ['shelf', 'shelves', 'bookcase', 'bookshelf', 'rack', 'display', 'ladder'],
+    keywords: ['table', 'coffee', 'dining', 'side', 'console', 'nested', 'marble', 'round'],
+    label: 'Wood Table / Sofa',
+    url: `${BASE}/table.glb`,
+  },
+  {
+    keywords: ['bed', 'mattress', 'bunk', 'daybed', 'headboard', 'platform', 'canopy', 'hydraulic', 'king', 'queen'],
+    label: 'Bed Frame',
+    url: `${BASE}/sofa.glb`,
+  },
+  {
+    keywords: ['shelf', 'shelves', 'bookcase', 'bookshelf', 'rack', 'display', 'ladder', 'industrial'],
     label: 'Bookshelf',
-    url: `${BASE}/sofa.glb`,
+    url: `${BASE}/table.glb`,
   },
   {
-    keywords: ['wardrobe', 'closet', 'dresser', 'armoire', 'drawer', 'cabinet', 'cupboard', 'almirah'],
+    keywords: ['wardrobe', 'closet', 'dresser', 'armoire', 'drawer', 'cabinet', 'cupboard', 'almirah', 'mirror'],
     label: 'Wardrobe',
-    url: `${BASE}/sofa.glb`,
+    url: `${BASE}/table.glb`,
   },
   {
-    keywords: ['desk', 'workstation', 'bureau', 'writing', 'study', 'standing', 'laptop', 'computer'],
-    label: 'Study Desk',
-    url: `${BASE}/sofa.glb`,
+    keywords: ['desk', 'workstation', 'bureau', 'writing', 'study', 'standing', 'laptop', 'computer', 'height'],
+    label: 'Standing Desk',
+    url: `${BASE}/table.glb`,
   },
   {
     keywords: ['tv', 'television', 'entertainment', 'console', 'unit', 'media', 'rustic'],
     label: 'TV Unit',
-    url: `${BASE}/sofa.glb`,
+    url: `${BASE}/table.glb`,
   },
   {
-    keywords: ['lamp', 'light', 'chandelier', 'pendant', 'sconce', 'strip', 'led', 'crystal'],
-    label: 'Floor Lamp',
-    url: `${BASE}/sofa.glb`,
+    keywords: ['lamp', 'light', 'chandelier', 'pendant', 'sconce', 'strip', 'led', 'crystal', 'bulb', 'floor'],
+    label: 'Barn Lamp',
+    url: `${BASE}/lamp.glb`,
   },
   {
     keywords: ['outdoor', 'garden', 'patio', 'bench', 'lounger', 'swing', 'hammock'],
@@ -75,7 +82,7 @@ function pickModel(productName, categoryName = '') {
 exports.startGeneration = async (req, res) => {
   try {
     const productId = parseInt(req.params.id, 10);
-    const { rows } = await pool.query(
+    const { rows } = await db.query(
       `SELECT p.id, p.name, c.name AS category_name
        FROM products p
        LEFT JOIN categories c ON p.category_id = c.id
@@ -93,7 +100,7 @@ exports.startGeneration = async (req, res) => {
     console.log(`🎯 Auto-assigning 3D model for "${name}" → ${model.label}`);
 
     // Save directly to DB — instant!
-    await pool.query(
+    await db.query(
       'UPDATE products SET ar_model = $1, updated_at = NOW() WHERE id = $2',
       [model.url, productId]
     );
@@ -127,7 +134,7 @@ exports.selectModel = async (req, res) => {
     const { glbUrl } = req.body;
     if (!glbUrl) return res.status(400).json({ success: false, message: 'glbUrl is required' });
 
-    await pool.query(
+    await db.query(
       'UPDATE products SET ar_model = $1, updated_at = NOW() WHERE id = $2',
       [glbUrl, productId]
     );
