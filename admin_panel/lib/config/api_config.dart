@@ -29,6 +29,7 @@ class ApiConfig {
 
   // Upload
   static const String uploadModel    = '$baseUrl/upload/model';
+  static const String uploadImage    = '$baseUrl/upload/image';
 
   // AI 2D → 3D Generation (Meshy.ai)
   static String generate3dStart(int productId)                  => '$baseUrl/products/$productId/generate-3d';

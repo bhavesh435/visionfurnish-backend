@@ -50,6 +50,47 @@ class UploadService {
     }
   }
 
+  // ── Upload product image (PNG/JPG) ───────────────────────────
+
+  /// Uploads [bytes] (image file) to `POST /api/upload/image`.
+  /// Works on Flutter Web (no dart:io needed).
+  /// Returns the public URL string on success, or throws on failure.
+  static Future<String> uploadProductImage(
+    Uint8List bytes,
+    String filename,
+  ) async {
+    final uri = Uri.parse(ApiConfig.uploadImage);
+
+    final request = http.MultipartRequest('POST', uri)
+      ..files.add(http.MultipartFile.fromBytes(
+        'image',
+        bytes,
+        filename: filename,
+      ));
+
+    try {
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final url = data['url'] as String?;
+        if (url == null || url.isEmpty) throw Exception('Server returned empty URL.');
+        return url;
+      } else {
+        String msg = 'Upload failed (${response.statusCode})';
+        try {
+          final body = jsonDecode(response.body) as Map<String, dynamic>;
+          msg = body['message'] as String? ?? msg;
+        } catch (_) {}
+        throw Exception(msg);
+      }
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Network error — cannot reach the server.');
+    }
+  }
+
   // ── AI 2D → 3D Generation ────────────────────────────────────
 
   /// Starts a 3D model assignment for [productId].

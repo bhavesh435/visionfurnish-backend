@@ -355,6 +355,11 @@ class _ProductFormDialogState extends State<_ProductFormDialog> with SingleTicke
   String? _arUploadError;
   String? _arUploadedFilename;
 
+  // Product image upload state
+  bool _imgUploading = false;
+  String? _imgUploadError;
+  String? _imgUploadedFilename;
+
   // AI Generate 3D state
   bool   _aiGenerating    = false;
   int    _aiProgress      = 0;
@@ -463,6 +468,50 @@ class _ProductFormDialogState extends State<_ProductFormDialog> with SingleTicke
   }
 
 
+  // ── Pick & Upload Product Image (PNG/JPG) ───────────────────
+  Future<void> _pickAndUploadImage() async {
+    setState(() {
+      _imgUploading = false;
+      _imgUploadError = null;
+    });
+
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'],
+      dialogTitle: 'Select Product Image',
+      withData: true,
+    );
+
+    if (result == null || result.files.isEmpty) return;
+    final picked = result.files.first;
+
+    final bytes = picked.bytes;
+    if (bytes == null || bytes.isEmpty) {
+      setState(() => _imgUploadError = 'Could not read file. Please try again.');
+      return;
+    }
+
+    setState(() => _imgUploading = true);
+
+    try {
+      final url = await UploadService.uploadProductImage(bytes, picked.name);
+      if (mounted) {
+        setState(() {
+          _imageCtrl.text = url;
+          _imgUploadedFilename = picked.name;
+          _imgUploading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _imgUploadError = e.toString().replaceFirst('Exception: ', '');
+          _imgUploading = false;
+        });
+      }
+    }
+  }
+
   // ── Pick & Upload .glb ──────────────────────────────────────
   Future<void> _pickAndUploadGlb() async {
     setState(() {
@@ -470,8 +519,6 @@ class _ProductFormDialogState extends State<_ProductFormDialog> with SingleTicke
       _arUploadError = null;
     });
 
-    // Open file picker filtered to .glb/.gltf
-    // withData: true ensures bytes are available on Flutter Web
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['glb', 'gltf'],
@@ -482,7 +529,6 @@ class _ProductFormDialogState extends State<_ProductFormDialog> with SingleTicke
     if (result == null || result.files.isEmpty) return;
     final picked = result.files.first;
 
-    // On Flutter Web, path is null — use bytes instead
     final bytes = picked.bytes;
     if (bytes == null || bytes.isEmpty) {
       setState(() => _arUploadError = 'Could not read file. Please try again.');
@@ -621,7 +667,67 @@ class _ProductFormDialogState extends State<_ProductFormDialog> with SingleTicke
                           onChanged: (v) => setState(() => _categoryId = v),
                         ),
                         const SizedBox(height: 12),
-                        TextFormField(controller: _imageCtrl, decoration: const InputDecoration(labelText: 'Main Image URL')),
+                        // ── Main Image: URL field + Upload button ──
+                        Row(children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _imageCtrl,
+                              decoration: const InputDecoration(labelText: 'Main Image URL'),
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _imgUploading
+                              ? const SizedBox(
+                                  width: 36, height: 36,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.gold),
+                                )
+                              : SizedBox(
+                                  height: 40,
+                                  child: ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.gold.withValues(alpha: 0.15),
+                                      foregroundColor: AppTheme.gold,
+                                      side: const BorderSide(color: AppTheme.gold),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                    ),
+                                    onPressed: _pickAndUploadImage,
+                                    icon: const Icon(Icons.upload_rounded, size: 16),
+                                    label: const Text('Upload PNG'),
+                                  ),
+                                ),
+                        ]),
+                        if (_imgUploadedFilename != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Row(children: [
+                              const Icon(Icons.check_circle_rounded, color: AppTheme.success, size: 14),
+                              const SizedBox(width: 4),
+                              Expanded(child: Text('Uploaded: $_imgUploadedFilename', style: const TextStyle(fontSize: 11, color: AppTheme.success), overflow: TextOverflow.ellipsis)),
+                            ]),
+                          ),
+                        if (_imgUploadError != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(_imgUploadError!, style: const TextStyle(fontSize: 11, color: AppTheme.danger)),
+                          ),
+                        if (_imageCtrl.text.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                _imageCtrl.text,
+                                height: 80, width: 80, fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  height: 80, width: 80,
+                                  decoration: BoxDecoration(color: AppTheme.surfaceDark, borderRadius: BorderRadius.circular(8)),
+                                  child: const Icon(Icons.broken_image_rounded, size: 24, color: AppTheme.textSecondary),
+                                ),
+                              ),
+                            ),
+                          ),
                         const SizedBox(height: 8),
                         ..._extraImageCtrls.asMap().entries.map((e) => Padding(
                           padding: const EdgeInsets.only(bottom: 8),
