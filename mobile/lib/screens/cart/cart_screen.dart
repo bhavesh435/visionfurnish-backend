@@ -89,7 +89,7 @@ class _CartScreenState extends State<CartScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: item.imageUrl != null
-                ? CachedNetworkImage(imageUrl: item.imageUrl!, width: 80, height: 80, fit: BoxFit.cover)
+                ? CachedNetworkImage(imageUrl: item.imageUrl!, width: 80, height: 80, fit: BoxFit.cover, httpHeaders: const {'User-Agent': 'Mozilla/5.0'})
                 : Container(width: 80, height: 80, color: AppTheme.bgSurface, child: const Icon(Icons.image, color: AppTheme.textMuted)),
           ),
           const SizedBox(width: 14),

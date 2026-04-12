@@ -6,6 +6,7 @@ import '../../models/models.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/providers.dart';
 import '../../config/theme.dart';
+import '../cart/checkout_screen.dart';
 import 'ar_view_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -288,21 +289,80 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 12)],
         ),
-        child: SizedBox(
-          height: 52,
-          child: ElevatedButton(
-            onPressed: p.stock <= 0 || _addingToCart ? null : () => _addToCart(p.id),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accent,
-              foregroundColor: AppTheme.bgPrimary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-            ),
-            child: _addingToCart
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0A0A0A)))
-                : Text(p.stock <= 0 ? 'Out of Stock' : 'Add to Cart'),
-          ),
-        ),
+        child: p.stock <= 0
+            ? SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.bgSurface,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Text('Out of Stock', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                ),
+              )
+            : Row(
+                children: [
+                  // Add to Cart
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: _addingToCart ? null : () async {
+                          await _addToCart(p.id);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${p.name} added to cart'),
+                                backgroundColor: AppTheme.success,
+                                duration: const Duration(seconds: 2),
+                                action: SnackBarAction(label: 'VIEW', textColor: Colors.white, onPressed: () => Navigator.pushNamed(context, '/main')),
+                              ),
+                            );
+                          }
+                        },
+                        icon: _addingToCart
+                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.accent))
+                            : const Icon(Icons.shopping_cart_outlined, size: 20),
+                        label: const Text('Add to Cart'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.accent,
+                          side: const BorderSide(color: AppTheme.accent, width: 1.5),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Buy Now
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        onPressed: _addingToCart ? null : () async {
+                          setState(() => _addingToCart = true);
+                          final ok = await context.read<CartProvider>().addToCart(p.id);
+                          if (mounted) {
+                            setState(() => _addingToCart = false);
+                            if (ok) {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const CheckoutScreen()));
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.flash_on_rounded, size: 20),
+                        label: const Text('Buy Now'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accent,
+                          foregroundColor: AppTheme.bgPrimary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }

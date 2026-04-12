@@ -44,160 +44,176 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _onRefresh() async {
+    final provider = context.read<ProductProvider>();
+    await Future.wait([
+      provider.fetchCategories(),
+      provider.fetchFeatured(),
+      provider.fetchProducts(reset: true),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final products = context.watch<ProductProvider>();
     final wishlist = context.watch<WishlistProvider>();
     return Scaffold(
       backgroundColor: AppTheme.bgPrimary,
-      body: CustomScrollView(
-        controller: _scrollCtrl,
-        slivers: [
-          // ── App Bar ──
-          SliverAppBar(
-            pinned: false,
-            floating: false,
-            snap: false,
-            backgroundColor: AppTheme.bgPrimary,
-            expandedHeight: 110,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('VisionFurnish', style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w700, color: AppTheme.accent)),
-                          const SizedBox(height: 2),
-                          Text('Discover luxury furniture', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary)),
-                        ],
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        color: AppTheme.accent,
+        backgroundColor: AppTheme.bgCard,
+        displacement: 60,
+        child: CustomScrollView(
+          controller: _scrollCtrl,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            // ── App Bar ──
+            SliverAppBar(
+              pinned: false,
+              floating: false,
+              snap: false,
+              backgroundColor: AppTheme.bgPrimary,
+              expandedHeight: 110,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('VisionFurnish', style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w700, color: AppTheme.accent)),
+                            const SizedBox(height: 2),
+                            Text('Discover luxury furniture', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary)),
+                          ],
+                        ),
                       ),
-                    ),
-                    GestureDetector(
-                      onTap: () => _showSearch(context),
-                      child: Container(
-                        width: 44, height: 44,
-                        decoration: BoxDecoration(color: AppTheme.bgSurface, borderRadius: BorderRadius.circular(14)),
-                        child: const Icon(Icons.search_rounded, color: AppTheme.textSecondary, size: 22),
+                      GestureDetector(
+                        onTap: () => _showSearch(context),
+                        child: Container(
+                          width: 44, height: 44,
+                          decoration: BoxDecoration(color: AppTheme.bgSurface, borderRadius: BorderRadius.circular(14)),
+                          child: const Icon(Icons.search_rounded, color: AppTheme.textSecondary, size: 22),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // ── Categories ──
-          SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
-                  child: Text('Categories', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+            // ── Categories ──
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
+                    child: Text('Categories', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+                  ),
+                  SizedBox(
+                    height: 90,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: products.categories.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemBuilder: (ctx, i) => _categoryChip(products.categories[i]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+
+            // ── Featured ──
+            if (products.featured.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 28, 20, 14),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Featured', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+                      Text('See all', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.accent, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
                 ),
-                SizedBox(
-                  height: 90,
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 260,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: products.categories.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
-                    itemBuilder: (ctx, i) => _categoryChip(products.categories[i]),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-
-          // ── Featured ──
-          if (products.featured.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 28, 20, 14),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Featured', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
-                    Text('See all', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.accent, fontWeight: FontWeight.w500)),
-                  ],
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 260,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: products.featured.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 14),
-                  itemBuilder: (ctx, i) {
-                    final p = products.featured[i];
-                    return SizedBox(
-                      width: 170,
-                      child: ProductCard(
-                        product: p, onTap: () => _openDetail(p),
-                        isFav: wishlist.isWishlisted(p.id),
-                        onFav: () => wishlist.toggle(p.id),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
-
-          // ── All Products ──
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 28, 20, 14),
-              child: Text('All Products', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
-            ),
-          ),
-
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: products.isLoading && products.products.isEmpty
-                ? SliverGrid.count(
-                    crossAxisCount: 2, mainAxisSpacing: 14, crossAxisSpacing: 14, childAspectRatio: 0.65,
-                    children: List.generate(6, (_) => const SkeletonCard()),
-                  )
-                : SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2, mainAxisSpacing: 14, crossAxisSpacing: 14, childAspectRatio: 0.65,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (ctx, i) {
-                        final p = products.products[i];
-                        return ProductCard(
-                          key: ValueKey(p.id),
+                    itemCount: products.featured.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 14),
+                    itemBuilder: (ctx, i) {
+                      final p = products.featured[i];
+                      return SizedBox(
+                        width: 170,
+                        child: ProductCard(
                           product: p, onTap: () => _openDetail(p),
                           isFav: wishlist.isWishlisted(p.id),
                           onFav: () => wishlist.toggle(p.id),
-                        );
-                      },
-                      childCount: products.products.length,
-                    ),
+                        ),
+                      );
+                    },
                   ),
-          ),
+                ),
+              ),
+            ],
 
-          // ── Load More / End Indicator ──
-          SliverToBoxAdapter(
-            child: products.isLoading && products.products.isNotEmpty
-                ? const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20),
-                    child: Center(child: CircularProgressIndicator(color: AppTheme.accent, strokeWidth: 2)),
-                  )
-                : const SizedBox.shrink(),
-          ),
+            // ── All Products ──
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 28, 20, 14),
+                child: Text('All Products', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+              ),
+            ),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
-        ],
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              sliver: products.isLoading && products.products.isEmpty
+                  ? SliverGrid.count(
+                      crossAxisCount: 2, mainAxisSpacing: 14, crossAxisSpacing: 14, childAspectRatio: 0.65,
+                      children: List.generate(6, (_) => const SkeletonCard()),
+                    )
+                  : SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2, mainAxisSpacing: 14, crossAxisSpacing: 14, childAspectRatio: 0.65,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (ctx, i) {
+                          final p = products.products[i];
+                          return ProductCard(
+                            key: ValueKey(p.id),
+                            product: p, onTap: () => _openDetail(p),
+                            isFav: wishlist.isWishlisted(p.id),
+                            onFav: () => wishlist.toggle(p.id),
+                          );
+                        },
+                        childCount: products.products.length,
+                      ),
+                    ),
+            ),
+
+            // ── Load More / End Indicator ──
+            SliverToBoxAdapter(
+              child: products.isLoading && products.products.isNotEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Center(child: CircularProgressIndicator(color: AppTheme.accent, strokeWidth: 2)),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          ],
+        ),
       ),
     );
   }
