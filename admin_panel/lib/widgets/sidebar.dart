@@ -22,6 +22,7 @@ class Sidebar extends StatelessWidget {
     _NavItem(Icons.receipt_long_rounded, 'Orders'),
     _NavItem(Icons.people_rounded, 'Users'),
     _NavItem(Icons.preview_rounded, 'Preview'),
+    _NavItem(Icons.settings_rounded, 'Settings'),
   ];
 
   @override

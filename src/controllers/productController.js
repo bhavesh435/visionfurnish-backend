@@ -36,7 +36,9 @@ const getAll = async (req, res, next) => {
     const limit  = Math.min(Math.max(parseInt(req.query.limit, 10) || 12, 1), 100);
     const offset = (page - 1) * limit;
 
-    const sort  = ['price', 'created_at', 'name'].includes(req.query.sort) ? req.query.sort : 'created_at';
+    const sortParam = req.query.sort;
+    const isRandom = sortParam === 'random';
+    const sort  = ['price', 'created_at', 'name'].includes(sortParam) ? sortParam : 'created_at';
     const order = req.query.order === 'asc' ? 'ASC' : 'DESC';
 
     let where = 'WHERE 1=1';
@@ -67,13 +69,15 @@ const getAll = async (req, res, next) => {
     );
     const total = parseInt(countRows[0].total, 10);
 
+    const orderClause = isRandom ? 'RANDOM()' : `p.${sort} ${order}`;
+
     // Fetch page — append LIMIT / OFFSET as next params
     const { rows } = await db.query(
       `SELECT p.*, c.name AS category_name
        FROM products p
        LEFT JOIN categories c ON p.category_id = c.id
        ${where}
-       ORDER BY p.${sort} ${order}
+       ORDER BY ${orderClause}
        LIMIT $${pIdx + 1} OFFSET $${pIdx + 2}`,
       [...params, limit, offset]
     );

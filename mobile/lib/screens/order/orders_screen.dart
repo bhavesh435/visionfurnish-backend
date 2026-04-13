@@ -106,6 +106,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
       case 'delivered': return AppTheme.success;
       case 'shipped': return AppTheme.info;
       case 'packed': return AppTheme.warning;
+      case 'confirmed': return const Color(0xFFC9A96E);
+      case 'processing': return const Color(0xFF7E57C2);
+      case 'pending': return AppTheme.textSecondary;
       case 'cancelled': return AppTheme.danger;
       default: return AppTheme.textSecondary;
     }

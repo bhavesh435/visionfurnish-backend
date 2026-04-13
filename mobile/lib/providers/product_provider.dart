@@ -41,6 +41,8 @@ class ProductProvider extends ChangeNotifier {
       final params = <String, String>{'page': '$_page', 'limit': '15'};
       // Backend uses category_id not category
       if (categoryId != null) params['category_id'] = '$categoryId';
+      // On reset/refresh, randomize product order
+      if (reset) params['sort'] = 'random';
       final res = await _api.get(ApiConfig.products, queryParams: params);
       if (res['success'] == true && res['data'] != null) {
         final data = res['data'];

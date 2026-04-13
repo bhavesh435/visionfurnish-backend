@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const validate = require('../middleware/validate');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, authorize } = require('../middleware/auth');
 const ctrl = require('../controllers/authController');
 
 // Public
@@ -12,5 +12,10 @@ router.post('/reset-password', ctrl.resetPasswordRules, validate, ctrl.resetPass
 
 // Protected
 router.get('/profile', authenticate, ctrl.getProfile);
+router.put('/profile', authenticate, ctrl.updateProfile);
+
+// Site settings (public read, admin write)
+router.get('/site-settings', ctrl.getSiteSettings);
+router.put('/site-settings', authenticate, authorize('admin'), ctrl.updateSiteSettings);
 
 module.exports = router;

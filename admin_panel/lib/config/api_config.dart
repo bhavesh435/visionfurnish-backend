@@ -27,6 +27,9 @@ class ApiConfig {
   // Chat
   static const String chat           = '$baseUrl/chat';
 
+  // Site Settings
+  static const String siteSettings   = '$baseUrl/auth/site-settings';
+
   // Upload
   static const String uploadModel    = '$baseUrl/upload/model';
   static const String uploadImage    = '$baseUrl/upload/image';

@@ -7,6 +7,7 @@ import 'edit_profile_screen.dart';
 import 'addresses_screen.dart';
 import 'help_support_screen.dart';
 import 'about_screen.dart';
+import 'privacy_security_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -85,6 +86,7 @@ class ProfileScreen extends StatelessWidget {
           _sectionLabel('Support'),
           const SizedBox(height: 10),
           _menuItem(Icons.headset_mic_outlined, 'Help & Support', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpSupportScreen()))),
+          _menuItem(Icons.shield_outlined, 'Privacy & Security', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacySecurityScreen()))),
           _menuItem(Icons.info_outline_rounded, 'About', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()))),
 
           const SizedBox(height: 24),

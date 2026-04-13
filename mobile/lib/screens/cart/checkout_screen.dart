@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../config/theme.dart';
 import '../../providers/providers.dart';
+import '../../providers/auth_provider.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -21,6 +23,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _placing = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AuthProvider>().fetchSiteSettings();
+    });
+  }
+
+  @override
   void dispose() { _addressCtrl.dispose(); _cityCtrl.dispose(); _stateCtrl.dispose(); _zipCtrl.dispose(); _phoneCtrl.dispose(); super.dispose(); }
 
   Future<void> _placeOrder() async {
@@ -29,6 +39,40 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
     setState(() => _placing = true);
+
+    // If UPI selected, launch UPI app first
+    if (_paymentMethod == 'upi') {
+      final settings = context.read<AuthProvider>().siteSettings;
+      final upiId = settings['upi_id'] ?? '';
+      if (upiId.isEmpty) {
+        if (mounted) {
+          setState(() => _placing = false);
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('UPI payment is not configured. Please contact support.'), backgroundColor: AppTheme.danger));
+        }
+        return;
+      }
+      final cart = context.read<CartProvider>();
+      final total = cart.total;
+      final upiUrl = 'upi://pay?pa=$upiId&pn=VisionFurnish&am=${total.toStringAsFixed(2)}&cu=INR&tn=VisionFurnish+Order+Payment';
+      final uri = Uri.parse(upiUrl);
+      try {
+        final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+        if (!launched) {
+          if (mounted) {
+            setState(() => _placing = false);
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No UPI app found. Please install a UPI app.'), backgroundColor: AppTheme.danger));
+          }
+          return;
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _placing = false);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to launch UPI: $e'), backgroundColor: AppTheme.danger));
+        }
+        return;
+      }
+    }
+
     final ok = await context.read<OrderProvider>().placeOrder({
       'shipping_address': _addressCtrl.text.trim(),
       'city': _cityCtrl.text.trim(),

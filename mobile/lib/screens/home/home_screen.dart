@@ -138,7 +138,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Featured', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
-                      Text('See all', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.accent, fontWeight: FontWeight.w500)),
+                      GestureDetector(
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const _FeaturedListScreen())),
+                        child: Text('See all', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.accent, fontWeight: FontWeight.w500)),
+                      ),
                     ],
                   ),
                 ),
@@ -297,6 +300,42 @@ class _ProductSearchDelegate extends SearchDelegate<String> {
           },
         );
       },
+    );
+  }
+}
+
+// ── Featured "See All" Screen ──
+class _FeaturedListScreen extends StatelessWidget {
+  const _FeaturedListScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final products = context.watch<ProductProvider>();
+    final wishlist = context.watch<WishlistProvider>();
+    return Scaffold(
+      backgroundColor: AppTheme.bgPrimary,
+      appBar: AppBar(
+        title: Text('Featured Products', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w600)),
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 20), onPressed: () => Navigator.pop(context)),
+      ),
+      body: products.featured.isEmpty
+          ? Center(child: Text('No featured products', style: GoogleFonts.inter(fontSize: 16, color: AppTheme.textSecondary)))
+          : GridView.builder(
+              padding: const EdgeInsets.all(20),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2, mainAxisSpacing: 14, crossAxisSpacing: 14, childAspectRatio: 0.65,
+              ),
+              itemCount: products.featured.length,
+              itemBuilder: (ctx, i) {
+                final p = products.featured[i];
+                return ProductCard(
+                  product: p,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProductDetailScreen(productId: p.id))),
+                  isFav: wishlist.isWishlisted(p.id),
+                  onFav: () => wishlist.toggle(p.id),
+                );
+              },
+            ),
     );
   }
 }

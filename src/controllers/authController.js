@@ -240,6 +240,67 @@ const getProfile = async (req, res, next) => {
   }
 };
 
+/**
+ * PUT /api/auth/profile
+ */
+const updateProfile = async (req, res, next) => {
+  try {
+    const { name, phone } = req.body;
+    if (!name || name.trim().length === 0) {
+      return error(res, 'Name is required.', 400);
+    }
+    await db.query(
+      'UPDATE users SET name = $1, phone = $2 WHERE id = $3',
+      [name.trim(), phone || null, req.user.id]
+    );
+    const { rows } = await db.query(
+      'SELECT id, name, email, phone, role, avatar_url, created_at FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    return success(res, { user: rows[0] }, 'Profile updated successfully.');
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/auth/site-settings
+ */
+const getSiteSettings = async (req, res, next) => {
+  try {
+    const { rows } = await db.query('SELECT key, value FROM site_settings');
+    const settings = {};
+    for (const row of rows) {
+      settings[row.key] = row.value;
+    }
+    return success(res, { settings });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PUT /api/auth/site-settings  (Admin)
+ */
+const updateSiteSettings = async (req, res, next) => {
+  try {
+    const { settings } = req.body;
+    if (!settings || typeof settings !== 'object') {
+      return error(res, 'Settings object is required.', 400);
+    }
+    for (const [key, value] of Object.entries(settings)) {
+      await db.query(
+        `INSERT INTO site_settings (key, value) VALUES ($1, $2)
+         ON CONFLICT (key) DO UPDATE SET value = $2`,
+        [key, value]
+      );
+    }
+    return success(res, null, 'Settings updated successfully.');
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -247,6 +308,9 @@ module.exports = {
   verifyOtp,
   resetPassword,
   getProfile,
+  updateProfile,
+  getSiteSettings,
+  updateSiteSettings,
   registerRules,
   loginRules,
   forgotPasswordRules,

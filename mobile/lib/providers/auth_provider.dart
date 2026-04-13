@@ -9,11 +9,13 @@ class AuthProvider extends ChangeNotifier {
   bool _isAuthenticated = false;
   AppUser? _user;
   String? _error;
+  Map<String, String> _siteSettings = {};
 
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _isAuthenticated;
   AppUser? get user => _user;
   String? get error => _error;
+  Map<String, String> get siteSettings => _siteSettings;
 
   Future<bool> tryAutoLogin() async {
     final t = await _api.token;
@@ -21,7 +23,9 @@ class AuthProvider extends ChangeNotifier {
     try {
       final res = await _api.get(ApiConfig.profile);
       if (res['success'] == true && res['data'] != null) {
-        _user = AppUser.fromJson(res['data']);
+        // Backend returns { data: { user: {...} } }
+        final userData = res['data']['user'] ?? res['data'];
+        _user = AppUser.fromJson(userData);
         _isAuthenticated = true;
         notifyListeners();
         return true;
@@ -67,6 +71,39 @@ class AuthProvider extends ChangeNotifier {
     catch (e) { _error = 'Connection error.'; }
     _isLoading = false; notifyListeners();
     return false;
+  }
+
+  /// Actually update profile on the backend
+  Future<bool> updateProfile({required String name, String? phone}) async {
+    try {
+      final res = await _api.put(ApiConfig.updateProfile, body: {
+        'name': name,
+        'phone': phone ?? '',
+      });
+      if (res['success'] == true && res['data'] != null) {
+        final userData = res['data']['user'] ?? res['data'];
+        _user = AppUser.fromJson(userData);
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('updateProfile error: $e');
+    }
+    return false;
+  }
+
+  /// Fetch site settings (contact info, UPI ID, etc.)
+  Future<void> fetchSiteSettings() async {
+    try {
+      final res = await _api.get(ApiConfig.siteSettings);
+      if (res['success'] == true && res['data'] != null) {
+        final settings = res['data']['settings'] as Map<String, dynamic>? ?? {};
+        _siteSettings = settings.map((k, v) => MapEntry(k, v?.toString() ?? ''));
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('fetchSiteSettings error: $e');
+    }
   }
 
   Future<void> logout() async {

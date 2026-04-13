@@ -10,6 +10,7 @@ import 'orders_screen.dart';
 import 'users_screen.dart';
 import 'chat_screen.dart';
 import 'preview_screen.dart';
+import 'settings_screen.dart';
 
 class AdminScaffold extends StatefulWidget {
   const AdminScaffold({super.key});
@@ -29,6 +30,7 @@ class _AdminScaffoldState extends State<AdminScaffold> {
     OrdersScreen(),
     UsersScreen(),
     PreviewScreen(),
+    SettingsScreen(),
   ];
 
   @override

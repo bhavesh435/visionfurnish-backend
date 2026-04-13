@@ -17,8 +17,8 @@ const placeOrderRules = [
 const updateStatusRules = [
   param('id').isInt().withMessage('Valid order ID is required.'),
   body('status')
-    .isIn(['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'])
-    .withMessage('Status must be one of: pending, confirmed, processing, shipped, delivered, cancelled.'),
+    .isIn(['pending', 'confirmed', 'processing', 'packed', 'shipped', 'delivered', 'cancelled'])
+    .withMessage('Status must be one of: pending, confirmed, processing, packed, shipped, delivered, cancelled.'),
 ];
 
 // ── Controllers ─────────────────────────────────────────────

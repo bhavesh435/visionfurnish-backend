@@ -21,6 +21,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _nameCtrl = TextEditingController(text: user?.name ?? '');
     _emailCtrl = TextEditingController(text: user?.email ?? '');
     _phoneCtrl = TextEditingController(text: user?.phone ?? '');
+    // Listen to name changes to update avatar letter
+    _nameCtrl.addListener(() => setState(() {}));
   }
 
   @override
@@ -39,14 +41,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       return;
     }
     setState(() => _saving = true);
-    // For now just show success — backend profile update would go here
-    await Future.delayed(const Duration(milliseconds: 800));
+
+    // Actually call the backend to update profile
+    final auth = context.read<AuthProvider>();
+    final ok = await auth.updateProfile(
+      name: _nameCtrl.text.trim(),
+      phone: _phoneCtrl.text.trim(),
+    );
+
     if (mounted) {
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully'), backgroundColor: AppTheme.success),
-      );
-      Navigator.pop(context);
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully'), backgroundColor: AppTheme.success),
+        );
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update profile'), backgroundColor: AppTheme.danger),
+        );
+      }
     }
   }
 
@@ -75,7 +89,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     child: Center(
                       child: Text(
-                        _nameCtrl.text.isNotEmpty ? _nameCtrl.text[0].toUpperCase() : '?',
+                        _nameCtrl.text.trim().isNotEmpty ? _nameCtrl.text.trim()[0].toUpperCase() : '?',
                         style: GoogleFonts.outfit(fontSize: 36, fontWeight: FontWeight.w700, color: AppTheme.bgPrimary),
                       ),
                     ),

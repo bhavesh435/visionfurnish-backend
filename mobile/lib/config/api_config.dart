@@ -10,6 +10,8 @@ class ApiConfig {
   static const String verifyOtp      = '$baseUrl/auth/verify-otp';
   static const String resetPassword  = '$baseUrl/auth/reset-password';
   static const String profile        = '$baseUrl/auth/profile';
+  static const String updateProfile  = '$baseUrl/auth/profile';
+  static const String siteSettings   = '$baseUrl/auth/site-settings';
 
   // Products
   static const String products       = '$baseUrl/products';

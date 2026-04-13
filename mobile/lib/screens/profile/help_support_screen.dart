@@ -1,12 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../config/theme.dart';
+import '../../providers/auth_provider.dart';
 
-class HelpSupportScreen extends StatelessWidget {
+class HelpSupportScreen extends StatefulWidget {
   const HelpSupportScreen({super.key});
 
   @override
+  State<HelpSupportScreen> createState() => _HelpSupportScreenState();
+}
+
+class _HelpSupportScreenState extends State<HelpSupportScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AuthProvider>().fetchSiteSettings();
+    });
+  }
+
+  void _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final settings = auth.siteSettings;
+    final email = settings['support_email'] ?? 'support@visionfurnish.com';
+    final phone = settings['support_phone'] ?? '+91 9876543210';
+
     return Scaffold(
       backgroundColor: AppTheme.bgPrimary,
       appBar: AppBar(
@@ -35,14 +63,27 @@ class HelpSupportScreen extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text('Our support team is available 24/7', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary)),
                 const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                // Use Wrap instead of Row to prevent overflow
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  alignment: WrapAlignment.center,
                   children: [
-                    _contactChip(Icons.email_outlined, 'Email', () {}),
-                    const SizedBox(width: 12),
-                    _contactChip(Icons.phone_outlined, 'Call', () {}),
-                    const SizedBox(width: 12),
-                    _contactChip(Icons.chat_outlined, 'Chat', () {}),
+                    _contactChip(Icons.email_outlined, 'Email', () {
+                      _launchUrl('mailto:$email');
+                    }),
+                    _contactChip(Icons.phone_outlined, 'Call', () {
+                      _launchUrl('tel:${phone.replaceAll(' ', '')}');
+                    }),
+                    _contactChip(Icons.chat_outlined, 'Chat', () {
+                      final chatUrl = settings['support_chat_url'] ?? '';
+                      if (chatUrl.isNotEmpty) {
+                        _launchUrl(chatUrl);
+                      } else {
+                        // Open WhatsApp with the phone number
+                        _launchUrl('https://wa.me/${phone.replaceAll('+', '').replaceAll(' ', '')}');
+                      }
+                    }),
                   ],
                 ),
               ],
@@ -67,7 +108,7 @@ class HelpSupportScreen extends StatelessWidget {
   Widget _contactChip(IconData icon, String label, VoidCallback onTap) => GestureDetector(
     onTap: onTap,
     child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(color: AppTheme.bgCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.divider)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 18, color: AppTheme.accent),

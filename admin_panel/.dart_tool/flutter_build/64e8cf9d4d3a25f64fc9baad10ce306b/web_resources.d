@@ -1,0 +1,1 @@
+ C:\\Users\\Bhavesh\\Desktop\\vfff\\admin_panel\\build\\web\\manifest.json:  C:\\Users\\Bhavesh\\Desktop\\vfff\\admin_panel\\web\\index.html C:\\Users\\Bhavesh\\Desktop\\vfff\\admin_panel\\web\\manifest.json
