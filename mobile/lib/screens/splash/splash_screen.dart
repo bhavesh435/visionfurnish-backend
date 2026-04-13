@@ -63,7 +63,8 @@ class _SplashScreenState extends State<SplashScreen>
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
     if (!mounted) return;
-    final route = token != null && token.isNotEmpty ? '/main' : '/login';
+    // Always go through auth-gate so tryAutoLogin() fetches full profile data
+    final route = token != null && token.isNotEmpty ? '/auth-gate' : '/login';
     Navigator.of(context).pushReplacementNamed(route);
   }
 

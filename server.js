@@ -79,12 +79,40 @@ app.use((req, res) => {
 // ── Global error handler ────────────────────────────────────
 app.use(errorHandler);
 
+// ── Auto-migrate site_settings table ────────────────────────
+const db = require('./src/config/db');
+
+async function ensureSiteSettings() {
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS site_settings (
+        key   VARCHAR(100) PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    `);
+    await db.query(`
+      INSERT INTO site_settings (key, value) VALUES
+        ('support_email', 'support@visionfurnish.com'),
+        ('support_phone', '+91 9876543210'),
+        ('support_chat_url', ''),
+        ('upi_id', ''),
+        ('privacy_policy', 'Your privacy is important to us. We collect only the information necessary to provide our services.'),
+        ('terms_of_service', 'By using VisionFurnish, you agree to our terms of service.')
+      ON CONFLICT (key) DO NOTHING
+    `);
+    console.log('✅  site_settings table ready');
+  } catch (err) {
+    console.error('⚠️  site_settings auto-migration warning:', err.message);
+  }
+}
+
 // ── Start server ────────────────────────────────────────────
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`\n🛋️  VisionFurnish API`);
   console.log(`   Environment : ${process.env.NODE_ENV || 'development'}`);
   console.log(`   Port        : ${PORT}`);
   console.log(`   URL         : http://localhost:${PORT}\n`);
+  await ensureSiteSettings();
 });
 
 module.exports = app;

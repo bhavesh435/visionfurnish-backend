@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/theme.dart';
 
 class AddressesScreen extends StatefulWidget {
@@ -9,10 +11,38 @@ class AddressesScreen extends StatefulWidget {
 }
 
 class _AddressesScreenState extends State<AddressesScreen> {
-  final List<_SavedAddress> _addresses = [
-    _SavedAddress(label: 'Home', address: '123, MG Road', city: 'Mumbai', state: 'Maharashtra', zip: '400001', phone: '+91 98765 43210', isDefault: true),
-    _SavedAddress(label: 'Office', address: '456, Bandra West', city: 'Mumbai', state: 'Maharashtra', zip: '400050', phone: '+91 98765 43211'),
-  ];
+  List<_SavedAddress> _addresses = [];
+  bool _loading = true;
+
+  static const _storageKey = 'saved_addresses';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAddresses();
+  }
+
+  /// Load addresses from SharedPreferences
+  Future<void> _loadAddresses() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_storageKey);
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        final List<dynamic> decoded = jsonDecode(raw);
+        _addresses = decoded.map((e) => _SavedAddress.fromJson(e)).toList();
+      } catch (_) {
+        _addresses = [];
+      }
+    }
+    if (mounted) setState(() => _loading = false);
+  }
+
+  /// Save addresses to SharedPreferences
+  Future<void> _saveAddresses() async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded = jsonEncode(_addresses.map((a) => a.toJson()).toList());
+    await prefs.setString(_storageKey, encoded);
+  }
 
   void _showAddDialog() {
     final labelC = TextEditingController();
@@ -61,8 +91,10 @@ class _AddressesScreenState extends State<AddressesScreen> {
                       label: labelC.text.isEmpty ? 'Other' : labelC.text,
                       address: addrC.text, city: cityC.text,
                       state: stateC.text, zip: zipC.text, phone: phoneC.text,
+                      isDefault: _addresses.isEmpty, // first address is default
                     ));
                   });
+                  _saveAddresses();
                   Navigator.pop(ctx);
                 },
                 child: const Text('Save Address'),
@@ -94,18 +126,22 @@ class _AddressesScreenState extends State<AddressesScreen> {
         icon: const Icon(Icons.add_rounded, size: 20),
         label: Text('Add', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
       ),
-      body: _addresses.isEmpty
-          ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.location_off_rounded, size: 56, color: AppTheme.textMuted),
-              const SizedBox(height: 16),
-              Text('No saved addresses', style: GoogleFonts.inter(fontSize: 16, color: AppTheme.textSecondary)),
-            ]))
-          : ListView.separated(
-              padding: const EdgeInsets.all(20),
-              itemCount: _addresses.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (ctx, i) => _addressCard(_addresses[i], i),
-            ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.accent))
+          : _addresses.isEmpty
+              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.location_off_rounded, size: 56, color: AppTheme.textMuted),
+                  const SizedBox(height: 16),
+                  Text('No saved addresses', style: GoogleFonts.inter(fontSize: 16, color: AppTheme.textSecondary)),
+                  const SizedBox(height: 8),
+                  Text('Tap + to add your first address', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textMuted)),
+                ]))
+              : ListView.separated(
+                  padding: const EdgeInsets.all(20),
+                  itemCount: _addresses.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (ctx, i) => _addressCard(_addresses[i], i),
+                ),
     );
   }
 
@@ -148,8 +184,10 @@ class _AddressesScreenState extends State<AddressesScreen> {
                     for (var a in _addresses) { a.isDefault = false; }
                     _addresses[index].isDefault = true;
                   });
+                  _saveAddresses();
                 } else if (val == 'delete') {
                   setState(() => _addresses.removeAt(index));
+                  _saveAddresses();
                 }
               },
               itemBuilder: (_) => [
@@ -186,4 +224,24 @@ class _SavedAddress {
     required this.label, required this.address, required this.city,
     this.state = '', this.zip = '', this.phone = '', this.isDefault = false,
   });
+
+  Map<String, dynamic> toJson() => {
+    'label': label,
+    'address': address,
+    'city': city,
+    'state': state,
+    'zip': zip,
+    'phone': phone,
+    'isDefault': isDefault,
+  };
+
+  factory _SavedAddress.fromJson(Map<String, dynamic> j) => _SavedAddress(
+    label: j['label'] ?? 'Other',
+    address: j['address'] ?? '',
+    city: j['city'] ?? '',
+    state: j['state'] ?? '',
+    zip: j['zip'] ?? '',
+    phone: j['phone'] ?? '',
+    isDefault: j['isDefault'] == true,
+  );
 }
